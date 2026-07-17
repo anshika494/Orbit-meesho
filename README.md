@@ -24,23 +24,74 @@ The dashboard UI (nav, headers, primary actions) supports English and Hindi via 
 
 ---
 
-## Setup
+## Setup and Installation
 
+Follow these instructions to get the **ORBIT** prototype running locally on your machine.
+
+### Prerequisites
+
+Ensure you have the following installed on your local environment:
+- **Node.js**: Version 18.0.0 or higher ([Download Node.js](https://nodejs.org/))
+- **npm**: Version 9.0.0 or higher (comes bundled with Node.js)
+- **Git**: Installed and configured on your terminal ([Install Git](https://git-scm.com/))
+- **Anthropic API Key**: An active API key with access to Claude models ([Get API Key](https://console.anthropic.com/))
+
+### Step-by-Step Guide
+
+#### 1. Clone the Repository
+Clone the repository using Git and navigate into the project directory:
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Add your Anthropic API key
-cp .env.example .env
-# then edit .env and set:
-# VITE_ANTHROPIC_API_KEY=your_key_here
-
-# 3. Run the dev server
-npm run dev
-
-# 4. Open the app
-# http://localhost:5173
+git clone https://github.com/anshika494/Orbit-meesho.git
+cd Orbit-meesho
 ```
+
+#### 2. Install Dependencies
+Run the package installer to retrieve all required React and Vite dependencies:
+```bash
+npm install
+```
+
+#### 3. Configure Environment Variables
+Duplicate the example environment file and configure it with your Anthropic API key:
+```bash
+# Copy the template to create your local .env file
+cp .env.example .env
+```
+Open `.env` in your text editor and replace `your_key_here` with your actual Anthropic API Key:
+```env
+VITE_ANTHROPIC_API_KEY=your_actual_anthropic_api_key
+```
+> [!IMPORTANT]
+> Keep your API key private. The `.env` file is excluded from git tracking via `.gitignore`. In a production environment, requests should be proxied through a serverless function (such as the proxy provided under [claude.js](file:///Users/anshika/Downloads/orbit-prototype%205/api/claude.js)) where the key is kept secure server-side.
+
+#### 4. Run the Development Server
+Start the local development server:
+```bash
+npm run dev
+```
+
+#### 5. Open the Application
+Once the server starts, you will see output indicating the local URL (usually `http://localhost:5173`). Open your web browser and navigate to:
+- **URL**: [http://localhost:5173](http://localhost:5173)
+
+---
+
+### Production Deployment and Building
+
+If you need to build the project for production or preview the production build locally:
+
+#### Build the Project
+```bash
+npm run build
+```
+This generates a production-ready bundle in the `dist` directory.
+
+#### Preview the Build Locally
+```bash
+npm run preview
+```
+This boots up a local server to preview the production-built files at `http://localhost:4173`.
+
 
 > All AI output is generated live by `claude-sonnet-4-6` via the Anthropic Messages API — nothing in the agent responses is hardcoded. Seller performance metrics (Orbit Score, return rate, fulfillment rate, etc.) are computed by a plain weighted formula (`src/agents/scoreCalculator.js`) from synthetic order-level records (`src/data/sellerDataAdapter.js`) — not typed in directly. There's no real Meesho API connection yet, so that adapter is the one function that would be swapped for a live data pull; everything downstream (the formula, the agents, the UI) is already written against that same data shape and wouldn't need to change.
 
