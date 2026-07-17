@@ -90,7 +90,5 @@ See [`OPEN_SOURCE_CREDITS.md`](./OPEN_SOURCE_CREDITS.md) for the full attributio
 
 ---
 
-## Team / Submission
-
-*Team name: — add here —*
-*Submission track: ScriptedBy{Her} 2.0, Meesho/Bharat theme*
+## Submission
+*Submission track: ScriptedBy{Her} 2.0, Meesho*
