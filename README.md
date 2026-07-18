@@ -18,7 +18,7 @@ Built for **ScriptedBy{Her} 2.0** (Meesho / Bharat theme).
 |---|---|
 | **Orbit Onboard** | Conversational onboarding (typed or spoken, via the browser's native voice input) that extracts a structured seller profile, then hands off to a Catalog Vision Agent that generates the listing from the seller's own uploaded product photos. |
 | **Orbit Score** | An Orchestrator Agent routes each seller autonomously, then a chained Diagnose → Plan → Verify loop turns a formula-computed performance score into a specific 7-day action plan. |
-| **Orbit Credit** | Proactive inventory financing. Demand, stock, and festival-timing signals — computed from the seller's own order and stock data — feed a Credit Recommendation Agent, whose offer is then checked (and revised if needed) by a Risk Reflection Agent before the seller ever sees it. |
+| **Orbit Credit** | Proactive inventory financing. Before any AI reasoning runs, a **hard-gate rule engine** (`src/data/riskGates.js`) checks a seller against fixed, deterministic thresholds — account age, fulfillment rate, return rate, response time, sales velocity — queried live from **MongoDB** via a real aggregation pipeline (`api/risk-analysis.js`). Fail any gate → deny, no LLM call made. Pass all gates → demand, stock, and festival-timing signals feed a Credit Recommendation Agent, whose offer is then checked (and revised if needed) by a Risk Reflection Agent before the seller ever sees it. |
 
 The dashboard UI (nav, headers, primary actions) supports English and Hindi via a language switcher in the sidebar — separate from Onboard's own conversational language detection, which already adapts to whatever language the seller types or speaks.
 
@@ -52,17 +52,26 @@ npm install
 ```
 
 #### 3. Configure Environment Variables
-Duplicate the example environment file and configure it with your Anthropic API key:
+Duplicate the example environment file and configure it with your Anthropic API key and MongoDB connection string:
 ```bash
 # Copy the template to create your local .env file
 cp .env.example .env
 ```
-Open `.env` in your text editor and replace `your_key_here` with your actual Anthropic API Key:
+Open `.env` and fill in both values:
 ```env
-VITE_ANTHROPIC_API_KEY=your_actual_anthropic_api_key
+ANTHROPIC_API_KEY=your_actual_anthropic_api_key
+MONGODB_URI=your_mongodb_atlas_connection_string
 ```
 > [!IMPORTANT]
-> Keep your API key private. The `.env` file is excluded from git tracking via `.gitignore`. In a production environment, requests should be proxied through a serverless function (such as the proxy provided under [claude.js](file:///Users/anshika/Downloads/orbit-prototype%205/api/claude.js)) where the key is kept secure server-side.
+> Keep both values private — never prefix them with `VITE_`, since that would bundle them into the browser-visible frontend code. Both are read server-side only, by the serverless functions in `/api` (`api/claude.js` for Claude, `api/risk-analysis.js` for the risk gate query). The `.env` file is excluded from git tracking via `.gitignore`.
+
+**Seed the database** (one-time, populates the `sellers`/`orders`/`catalogItems`/`reviews` collections that `api/risk-analysis.js` queries):
+```bash
+node scripts/seed-mongo.mjs
+```
+
+> [!NOTE]
+> `npm run dev` only runs the Vite frontend and does not serve `/api` routes. To test the Claude proxy or the Mongo-backed risk gates locally, run `vercel dev` instead (requires `npm i -g vercel` and `vercel login`). Without a working `/api/risk-analysis`, Orbit Credit's risk gate check automatically falls back to running the same rule engine locally — see `src/data/riskAnalysisClient.js` — so the app still works, it just won't be querying MongoDB.
 
 #### 4. Run the Development Server
 Start the local development server:

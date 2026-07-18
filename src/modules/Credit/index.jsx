@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import SignalCards from './SignalCards';
 import CreditOffer from './CreditOffer';
 import ROICalculator from './ROICalculator';
+import RiskGatePanel from './RiskGatePanel';
 import { useSeller } from '../../context/SellerContext';
 import { runCreditPipeline } from '../../agents/creditAgent';
 import { computeCreditSignals } from '../../data/creditSignals';
@@ -10,8 +11,10 @@ import { useLanguage } from '../../context/LanguageContext';
 export default function Credit() {
   const { seller, pushLog, creditOfferOutput, setCreditOfferOutput, updateSeller } = useSeller();
   const { t } = useLanguage();
-  const [phase, setPhase] = useState('signals'); // signals -> converging -> analyzing -> offer
+  const [phase, setPhase] = useState('signals'); // signals -> converging -> analyzing -> offer -> denied
   const [risk, setRisk] = useState(null);
+  const [gateResult, setGateResult] = useState(null);
+  const [denialReason, setDenialReason] = useState(null);
   const [error, setError] = useState(null);
 
   // Computed once per seller, straight from their raw order/stock data — the
@@ -26,7 +29,15 @@ export default function Credit() {
     setTimeout(() => setPhase('analyzing'), 1200);
 
     try {
-      const { offer, risk: riskResult } = await runCreditPipeline(seller, pushLog);
+      const { offer, risk: riskResult, gateResult: gates, denied, denialReason: reason } = await runCreditPipeline(seller, pushLog);
+      setGateResult(gates);
+
+      if (denied) {
+        setDenialReason(reason);
+        setTimeout(() => setPhase('denied'), 1400);
+        return;
+      }
+
       setRisk(riskResult);
       if (!offer) throw new Error('Credit Agent returned no usable offer');
       setCreditOfferOutput(offer);
@@ -55,7 +66,7 @@ export default function Credit() {
             <span></span>
             <span></span>
           </div>
-          Credit Agent is analyzing your situation…
+          Checking risk gates, then Credit Agent is analyzing your situation…
         </div>
       )}
 
@@ -68,8 +79,23 @@ export default function Credit() {
         </div>
       )}
 
+      {phase === 'denied' && gateResult && (
+        <>
+          <div className="card credit-denied-card">
+            <h3>Not eligible for a credit offer yet</h3>
+            <p>{denialReason}</p>
+            <p className="credit-denied-note">
+              These are hard cutoffs checked before any AI reasoning runs — no offer is generated for a seller who
+              doesn't clear them, so nothing here is a judgment call.
+            </p>
+          </div>
+          <RiskGatePanel gateResult={gateResult} expanded />
+        </>
+      )}
+
       {phase === 'offer' && creditOfferOutput && (
         <>
+          <RiskGatePanel gateResult={gateResult} expanded={false} />
           <CreditOffer offer={creditOfferOutput} seller={seller} risk={risk} />
           <ROICalculator />
         </>

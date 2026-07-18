@@ -1,9 +1,18 @@
 import { callClaude } from './claudeClient';
 import { computeCreditSignals } from '../data/creditSignals';
+import { getRiskGateResult } from '../data/riskAnalysisClient';
 
 // ─────────────────────────────────────────────────────────────────────────
-// ORBIT CREDIT — now a genuine 2-agent chain, not one LLM call:
+// ORBIT CREDIT — now a genuine 2-agent chain, not one LLM call, sitting
+// behind a hard-gate rule engine:
 //
+//   evaluateHardGates()     (Tier 1 — deterministic, queried from MongoDB
+//                            via /api/risk-analysis when available, falls
+//                            back to the same rule engine run locally.
+//                            ALL gates must pass or the pipeline stops here
+//                            with a deny — no LLM call is made.)
+//        │  (only if gates pass)
+//        ▼
 //   computeCreditSignals()  (deterministic, not an LLM — real numbers
 //                            derived from the seller's own order/stock data)
 //        │
@@ -23,7 +32,8 @@ import { computeCreditSignals } from '../data/creditSignals';
 //
 // This mirrors the Diagnose→Reflect and Plan→Reflect pattern used in Orbit
 // Score: an agent's output is checked by a second agent before it reaches
-// the seller, and gets revised if that check fails.
+// the seller, and gets revised if that check fails. The hard gates are
+// kept OUTSIDE that LLM loop on purpose — see src/data/riskGates.js for why.
 // ─────────────────────────────────────────────────────────────────────────
 
 function cleanJson(raw) {
@@ -99,6 +109,38 @@ Respond with ONLY raw JSON, no markdown fences, no preamble:
 }`;
 
 export async function runCreditPipeline(seller, onLog) {
+  onLog('RISK GATE', 'Querying risk factors (MongoDB aggregation: total sales, returns, fulfillment, response time)...');
+  const gateResult = await getRiskGateResult(seller);
+  const { gates } = gateResult;
+
+  onLog(
+    'RISK GATE',
+    gateResult.source === 'mongodb'
+      ? 'Data source: MongoDB (live aggregation query)'
+      : `Data source: local fallback (${gateResult.fallbackReason || 'DB unavailable'})`
+  );
+
+  gates.gates.forEach((g) => {
+    onLog('RISK GATE', `${g.passed ? '✓' : '✗'} ${g.label} — ${g.detail}`);
+  });
+
+  if (!gates.passed) {
+    onLog(
+      'RISK GATE',
+      `✗ DENIED — failed ${gates.failedGates.length} hard gate(s): ${gates.failedGates.map((g) => g.label).join(', ')}`
+    );
+    return {
+      offer: null,
+      signals: null,
+      risk: null,
+      gateResult,
+      denied: true,
+      denialReason: gates.failedGates.map((g) => g.detail).join('; '),
+    };
+  }
+
+  onLog('RISK GATE', '✓ All hard gates passed — proceeding to soft-score credit analysis');
+
   onLog('CREDIT AGENT', 'Computing demand, inventory, and timing signals from order data...');
   const signals = computeCreditSignals(seller.rawData);
   onLog(
@@ -159,5 +201,5 @@ export async function runCreditPipeline(seller, onLog) {
     }
   }
 
-  return { offer, signals, risk };
+  return { offer, signals, risk, gateResult, denied: false };
 }
