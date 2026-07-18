@@ -1,13 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Send } from 'lucide-react';
+import { Mic, Send, Volume2, VolumeX } from 'lucide-react';
 import { runOnboardAgent, STARTER_MESSAGES } from '../../agents/onboardAgent';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { useTTS } from '../../hooks/useTTS';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function ChatInterface({ messages, setMessages, onExtracted, onLog }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    try { return window.localStorage.getItem('orbit-tts') !== 'off'; }
+    catch { return true; }
+  });
   const scrollRef = useRef(null);
   const { t, speechLang } = useLanguage();
   const {
@@ -20,6 +25,8 @@ export default function ChatInterface({ messages, setMessages, onExtracted, onLo
     stop: stopListening,
     reset: resetTranscript,
   } = useSpeechRecognition(speechLang);
+
+  const { supported: ttsSupported, speaking, speak, cancel } = useTTS();
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -48,6 +55,14 @@ export default function ChatInterface({ messages, setMessages, onExtracted, onLo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [micError]);
 
+  function toggleTts() {
+    const next = !ttsEnabled;
+    setTtsEnabled(next);
+    if (!next) cancel();
+    try { window.localStorage.setItem('orbit-tts', next ? 'on' : 'off'); }
+    catch { /* ignore */ }
+  }
+
   async function send(text) {
     if (!text.trim() || loading) return;
     setError(null);
@@ -64,6 +79,8 @@ export default function ChatInterface({ messages, setMessages, onExtracted, onLo
       );
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
       if (extracted) onExtracted(extracted);
+      // Speak the AI reply aloud if TTS is enabled.
+      if (ttsEnabled) speak(reply, speechLang);
     } catch (err) {
       onLog('SYSTEM', `Onboard Agent error: ${err.message}`);
       setError(err.message);
@@ -84,6 +101,26 @@ export default function ChatInterface({ messages, setMessages, onExtracted, onLo
 
   return (
     <div className="chat-interface card">
+      {/* Chat header with TTS toggle */}
+      <div className="chat-header">
+        <span className="chat-header-title">Orbit Onboard</span>
+        {ttsSupported && (
+          <button
+            type="button"
+            className={`chat-tts-btn ${ttsEnabled ? 'tts-on' : 'tts-off'}`}
+            title={ttsEnabled ? 'Voice replies: ON (click to mute)' : 'Voice replies: OFF (click to enable)'}
+            onClick={toggleTts}
+            aria-label={ttsEnabled ? 'Mute voice replies' : 'Enable voice replies'}
+          >
+            {ttsEnabled
+              ? <><Volume2 size={15} /> <span>Voice ON</span></>
+              : <><VolumeX size={15} /> <span>Voice OFF</span></>
+            }
+            {speaking && <span className="tts-speaking-dot" />}
+          </button>
+        )}
+      </div>
+
       <div className="chat-scroll">
         {messages.length === 0 && (
           <div className="chat-starters">

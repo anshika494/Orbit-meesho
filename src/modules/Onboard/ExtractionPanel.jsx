@@ -1,6 +1,7 @@
 import React from 'react';
-import { CheckCircle2, Rocket } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 import PhotoUpload from './PhotoUpload';
 
 function Field({ label, value }) {
@@ -22,6 +23,7 @@ export default function ExtractionPanel({
   catalogError,
 }) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const confidence = extracted?.confidence ?? 0;
   const complete = confidence >= 80;
 
@@ -89,15 +91,20 @@ export default function ExtractionPanel({
             )}
           </div>
 
-          <div className="catalog-status-section">
-            <Rocket size={16} color="var(--green)" />
-            <div className="catalog-status-text">
-              <span className="catalog-status-title">{t('onboard.readyStatusTitle')}</span>
-              <span className="catalog-status-sub">{t('onboard.readyStatusSub')}</span>
-            </div>
-          </div>
+          {/* Go Live button */}
+          <button
+            className="go-live-btn"
+            onClick={() => navigate('/meesho-listing')}
+          >
+            <span className="go-live-btn__icon">🚀</span>
+            Go Live on Meesho →
+          </button>
+          <p className="go-live-hint">
+            Redirects to the Meesho Seller Portal with your listing pre-filled
+          </p>
         </div>
       )}
     </div>
   );
 }
+

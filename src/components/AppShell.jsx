@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Package, ShoppingBag, Wallet, Sparkles } from 'lucide-react';
+import { Home, Package, ShoppingBag, Wallet, Sparkles, LogOut } from 'lucide-react';
 import { useSeller } from '../context/SellerContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import AgentLog from './AgentLog';
 import SellerSwitcher from './SellerSwitcher';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -12,6 +13,7 @@ const PLACEHOLDER_MSG = 'Existing Meesho screen — not part of this prototype';
 export default function AppShell({ children }) {
   const { seller } = useSeller();
   const { t } = useLanguage();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [toastKey, setToastKey] = useState(0);
 
@@ -79,7 +81,36 @@ export default function AppShell({ children }) {
         <SellerSwitcher />
         <LanguageSwitcher />
 
-        <NavLink to="/credits" className="sidebar-footer-link">
+        <div className="sidebar-auth-section" style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+          <div className="sidebar-auth-user" style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', padding: '0 10px' }}>
+            <div>Signed in as:</div>
+            <div style={{ color: 'var(--white)', fontWeight: '600' }}>{user?.name || 'Seller'}</div>
+            <div style={{ color: 'var(--dim)', marginTop: '2px' }}>{user?.phone}</div>
+          </div>
+          <button 
+            onClick={logout} 
+            className="sidebar-nav-item" 
+            style={{ 
+              width: '100%', 
+              background: 'none', 
+              border: 'none', 
+              color: '#ff4d4f', 
+              cursor: 'pointer',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 10px',
+              borderRadius: '8px',
+              fontSize: '13px'
+            }}
+          >
+            <LogOut size={18} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+
+        <NavLink to="/credits" className="sidebar-footer-link" style={{ marginTop: '12px' }}>
           {t('nav.openSource')}
         </NavLink>
       </nav>
