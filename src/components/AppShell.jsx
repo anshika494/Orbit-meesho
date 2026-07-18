@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, Package, ShoppingBag, Wallet, Sparkles } from 'lucide-react';
 import { useSeller } from '../context/SellerContext';
@@ -13,13 +13,10 @@ export default function AppShell({ children }) {
   const { seller } = useSeller();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [toast, setToast] = useState(false);
-  const toastTimer = useRef(null);
+  const [toastKey, setToastKey] = useState(0);
 
   function showToast() {
-    setToast(true);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(false), 2600);
+    setToastKey(k => k + 1);
   }
 
   const NAV_ITEMS = [
@@ -106,11 +103,13 @@ export default function AppShell({ children }) {
         </NavLink>
       </nav>
 
-      {/* Placeholder toast */}
-      <div className={`placeholder-toast ${toast ? 'placeholder-toast--visible' : ''}`} role="status" aria-live="polite">
-        <span className="placeholder-toast__icon">ℹ️</span>
-        {PLACEHOLDER_MSG}
-      </div>
+      {/* Placeholder toast — key changes on every click, remounting the element so the animation restarts */}
+      {toastKey > 0 && (
+        <div key={toastKey} className="placeholder-toast placeholder-toast--visible" role="status" aria-live="polite">
+          <span className="placeholder-toast__icon">ℹ️</span>
+          {PLACEHOLDER_MSG}
+        </div>
+      )}
     </div>
   );
 }
