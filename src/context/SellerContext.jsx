@@ -80,6 +80,9 @@ export function SellerProvider({ children }) {
   const [diagnosisOutput, setDiagnosisOutput] = useState(null);
   const [planOutput, setPlanOutput] = useState(null);
   const [verifyOutput, setVerifyOutput] = useState(null);
+  const [planTargets, setPlanTargets] = useState(null);
+  const [outcomeOutput, setOutcomeOutput] = useState(null);
+  const [scoreHistory, setScoreHistory] = useState([]);
   const [creditOfferOutput, setCreditOfferOutput] = useState(null);
   const [extractedProfile, setExtractedProfile] = useState(null);
   const [catalogOutput, setCatalogOutput] = useState(null);
@@ -117,6 +120,9 @@ export function SellerProvider({ children }) {
     setDiagnosisOutput(null);
     setPlanOutput(null);
     setVerifyOutput(null);
+    setPlanTargets(null);
+    setOutcomeOutput(null);
+    setScoreHistory([]);
     setOrchestratorOutput(null);
     setColdStartOutput(null);
     setCreditOfferOutput(null);
@@ -149,6 +155,12 @@ export function SellerProvider({ children }) {
     setPlanOutput,
     verifyOutput,
     setVerifyOutput,
+    planTargets,
+    setPlanTargets,
+    outcomeOutput,
+    setOutcomeOutput,
+    scoreHistory,
+    setScoreHistory,
     creditOfferOutput,
     setCreditOfferOutput,
     extractedProfile,

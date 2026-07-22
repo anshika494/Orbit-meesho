@@ -1,4 +1,4 @@
-import { callClaude } from './claudeClient';
+import { callClaude, extractBlock, stripBlocks } from './claudeClient';
 
 export function buildPlanSystemPrompt(diagnosisText) {
   return `You are ORBIT's Plan Agent. You receive a diagnosis from the Diagnose Agent
@@ -25,7 +25,21 @@ DAY 6: [task 1] | [task 2]
 DAY 7: [task 1] | Check your Orbit Score — did it move?
 
 PREDICTED SCORE IMPROVEMENT: +X to +Y points
-CONFIDENCE: X%`;
+CONFIDENCE: X%
+
+Then emit the following block EXACTLY — it must be valid JSON, all six keys present,
+values are numbers representing realistic week-1 targets given the diagnosis:
+
+<<<TARGETS>>>
+{
+  "returnRate": <target % — lower is better, aim for <= platform avg of 18>,
+  "fulfillmentRate": <target % — aim for >= 90>,
+  "responseTime": <target hours — aim for <= 2>,
+  "catalogFreshness": <target % — aim for >= 70>,
+  "repeatBuyers": <target % — realistic +2 to +5 pts gain>,
+  "rating": <target out of 5 — realistic +0.1 to +0.3 gain>
+}
+<<<END>>>`;
 }
 
 export async function runPlanAgent(diagnosisText, onLog) {
@@ -33,8 +47,11 @@ export async function runPlanAgent(diagnosisText, onLog) {
   const raw = await callClaude(
     buildPlanSystemPrompt(diagnosisText),
     [{ role: 'user', content: 'Build the plan now.' }],
-    { maxTokens: 900 }
+    { maxTokens: 1100 }
   );
-  onLog('PLAN AGENT', 'Plan complete → passing to Verify Agent');
-  return raw.trim();
+  const targets = extractBlock(raw, 'TARGETS');
+  const cleanText = stripBlocks(raw).trim();
+  onLog('PLAN AGENT', `Plan complete → targets set (${targets ? 'parsed ✓' : 'parse failed'})`);
+  onLog('PLAN AGENT', 'Passing to Verify Agent');
+  return { text: cleanText, targets };
 }

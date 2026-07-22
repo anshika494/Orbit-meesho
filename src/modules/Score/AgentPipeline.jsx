@@ -65,7 +65,8 @@ function ChecklistItem({ label }) {
 
 function extractTasks(planText) {
   if (!planText) return [];
-  return planText
+  const text = typeof planText === 'string' ? planText : planText.text || '';
+  return text
     .split('\n')
     .filter((l) => /^DAY \d/i.test(l.trim()))
     .map((l) => l.trim());
