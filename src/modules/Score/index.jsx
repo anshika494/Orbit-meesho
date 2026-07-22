@@ -5,6 +5,7 @@ import ScoreBreakdown from './ScoreBreakdown';
 import AgentPipeline from './AgentPipeline';
 import OrchestratorCard from './OrchestratorCard';
 import ColdStartCard from './ColdStartCard';
+import DataSourceBadge from '../../components/DataSourceBadge';
 import { useSeller } from '../../context/SellerContext';
 import { runOrchestratorAgent } from '../../agents/orchestratorAgent';
 import { runDiagnoseAgent } from '../../agents/diagnoseAgent';
@@ -108,6 +109,7 @@ export default function Score() {
       </div>
       <div className="score-layout">
         <div className="score-col-left">
+          <DataSourceBadge source={seller.dataSource} note={seller.dataSourceNote} />
           <ScoreDial score={seller.orbitScore} />
           <MetricGrid seller={seller} />
           <ScoreBreakdown seller={seller} />

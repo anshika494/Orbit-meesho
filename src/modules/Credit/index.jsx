@@ -3,6 +3,7 @@ import SignalCards from './SignalCards';
 import CreditOffer from './CreditOffer';
 import ROICalculator from './ROICalculator';
 import RiskGatePanel from './RiskGatePanel';
+import DataSourceBadge from '../../components/DataSourceBadge';
 import { useSeller } from '../../context/SellerContext';
 import { runCreditPipeline } from '../../agents/creditAgent';
 import { computeCreditSignals } from '../../data/creditSignals';
@@ -55,6 +56,7 @@ export default function Credit() {
       <div className="credit-header">
         <h2>{t('credit.title')}</h2>
         <p>{t('credit.subtitle')}</p>
+        <DataSourceBadge source={seller.dataSource} note={seller.dataSourceNote} />
       </div>
 
       <SignalCards phase={phase} onConverge={runAnalysis} signals={signals} />

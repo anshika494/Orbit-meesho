@@ -17,7 +17,7 @@ Built for **ScriptedBy{Her} 2.0** (Meesho / Bharat theme).
 | Module | What it does |
 |---|---|
 | **Orbit Onboard** | Conversational onboarding (typed or spoken, via the browser's native voice input) that extracts a structured seller profile, then hands off to a Catalog Vision Agent that generates the listing from the seller's own uploaded product photos. |
-| **Orbit Score** | An Orchestrator Agent routes each seller autonomously, then a chained Diagnose → Plan → Verify loop turns a formula-computed performance score into a specific 7-day action plan. |
+| **Orbit Score** | An Orchestrator Agent routes each seller autonomously, then a chained Diagnose → Plan → Verify loop turns a formula-computed performance score into a specific 7-day action plan. Order-level data is queried live from **MongoDB** (`api/seller-data.js`), with an automatic local fallback if the DB call fails, so the module never breaks mid-demo. |
 | **Orbit Credit** | Proactive inventory financing. Before any AI reasoning runs, a **hard-gate rule engine** (`src/data/riskGates.js`) checks a seller against fixed, deterministic thresholds — account age, fulfillment rate, return rate, response time, sales velocity — queried live from **MongoDB** via a real aggregation pipeline (`api/risk-analysis.js`). Fail any gate → deny, no LLM call made. Pass all gates → demand, stock, and festival-timing signals feed a Credit Recommendation Agent, whose offer is then checked (and revised if needed) by a Risk Reflection Agent before the seller ever sees it. |
 
 The dashboard UI (nav, headers, primary actions) supports English and Hindi via a language switcher in the sidebar — separate from Onboard's own conversational language detection, which already adapts to whatever language the seller types or speaks.
@@ -102,7 +102,7 @@ npm run preview
 This boots up a local server to preview the production-built files at `http://localhost:4173`.
 
 
-> All AI output is generated live by `claude-sonnet-4-6` via the Anthropic Messages API — nothing in the agent responses is hardcoded. Seller performance metrics (Orbit Score, return rate, fulfillment rate, etc.) are computed by a plain weighted formula (`src/agents/scoreCalculator.js`) from synthetic order-level records (`src/data/sellerDataAdapter.js`) — not typed in directly. There's no real Meesho API connection yet, so that adapter is the one function that would be swapped for a live data pull; everything downstream (the formula, the agents, the UI) is already written against that same data shape and wouldn't need to change.
+> All AI output is generated live by `claude-sonnet-4-6` via the Anthropic Messages API — nothing in the agent responses is hardcoded. Seller performance metrics (Orbit Score, return rate, fulfillment rate, etc.) are computed by a plain weighted formula (`src/agents/scoreCalculator.js`) from order-level records read live from **MongoDB** (`api/seller-data.js`, `api/risk-analysis.js`) — not typed in directly. If the DB call fails for any reason, the app falls back to the same-shaped synthetic generator (`src/data/sellerDataAdapter.js`) so a demo never hard-breaks; the UI shows a small badge indicating which source served the current numbers. There's no real Meesho API connection yet, so `api/seller-data.js` is the one endpoint that would be swapped for a live data pull; everything downstream (the formula, the agents, the UI) is already written against that same data shape and wouldn't need to change.
 
 ---
 

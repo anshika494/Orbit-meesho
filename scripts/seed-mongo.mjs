@@ -87,22 +87,33 @@ function buildDocsForSeller(profile) {
   const orderCount = profile.orderCount;
   const buyerPoolSize = Math.max(1, Math.round(orderCount * 0.72));
 
+  // IMPORTANT: the rand() calls below are sequenced to exactly match
+  // src/data/sellerDataAdapter.js's getSellerRawData() — same seed +
+  // same call order = bit-identical output. This is what makes the
+  // MongoDB path and the local-fallback path produce the exact same
+  // numbers for the same seller, not just statistically similar ones.
+  // If you ever edit the generation logic in one file, mirror it here.
+
+  // Pass 1 — orders: daysAgo, buyerId, fulfilled, returned (in that order,
+  // per order) to match sellerDataAdapter.js exactly.
   const orders = [];
   for (let i = 0; i < orderCount; i += 1) {
     const daysAgo = Math.round(rand() * accountAgeDays);
+    const buyerId = `buyer_${Math.floor(rand() * buyerPoolSize)}`;
     const fulfilled = rand() > profile.baseFulfillmentMiss;
     const returned = fulfilled && rand() < profile.baseReturnRate;
     orders.push({
       sellerId: profile.sellerId,
       orderId: `order_${i}`,
       placedAt: new Date(now - daysAgo * DAY_MS),
-      buyerId: `buyer_${Math.floor(rand() * buyerPoolSize)}`,
+      buyerId,
       fulfilled,
       returned,
-      responseHours: Math.max(0.2, profile.baseResponseHours + (rand() - 0.5) * 2),
     });
   }
 
+  // Pass 2 — catalog items (consumes rand() before responseLogs, matching
+  // the adapter's order of operations).
   const catalogCount = Math.max(1, Math.round(orderCount / 12) || 1);
   const catalogItems = Array.from({ length: catalogCount }, (_, i) => ({
     sellerId: profile.sellerId,
@@ -110,6 +121,13 @@ function buildDocsForSeller(profile) {
     lastUpdatedDaysAgo: Math.round(rand() * profile.catalogStalenessSpread),
   }));
 
+  // Pass 3 — response hours, one per order, as a separate pass over the
+  // already-built orders array (matching orders.map() in the adapter).
+  orders.forEach((o) => {
+    o.responseHours = Math.max(0.2, profile.baseResponseHours + (rand() - 0.5) * 2);
+  });
+
+  // Pass 4 — reviews.
   const reviewCount = Math.max(0, Math.round(orderCount / 3));
   const reviews = Array.from({ length: reviewCount }, () => ({
     sellerId: profile.sellerId,

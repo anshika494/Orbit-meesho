@@ -760,6 +760,24 @@
   gap: 16px;
 }
 
+/* ===== DATA SOURCE BADGE (Score + Credit — shows Mongo vs local fallback) ===== */
+.data-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: var(--card2);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.credit-header .data-source-badge {
+  margin-top: 8px;
+}
+
 .score-dial {
   display: flex;
   flex-direction: column;

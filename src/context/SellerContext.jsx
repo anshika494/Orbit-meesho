@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { getSellerRawData } from '../data/sellerDataAdapter';
+import { getSellerData } from '../data/sellerDataClient';
 import { computeSellerMetrics } from '../agents/scoreCalculator';
 import { COLD_START_ORDER_THRESHOLD } from '../data/constants';
 
@@ -58,14 +59,19 @@ export const SELLERS = {
 export { COLD_START_ORDER_THRESHOLD };
 
 // The single place that turns a seller's identity/meta into a full profile:
-// pull raw order-level records from the data adapter, then run them through
-// the score calculator. Swap sellerDataAdapter's internals for a real
-// Meesho API call later and this function — and everything that calls it —
-// doesn't need to change.
+// pull raw order-level records, then run them through the score calculator.
+//
+// buildSeller() itself stays synchronous and uses the local generator, so
+// the app renders instantly on load/seller-switch instead of showing a
+// blank state. SellerProvider then kicks off an async upgrade to real
+// MongoDB data right after (see the useEffect below) and swaps it in once
+// it resolves — computeSellerMetrics() doesn't care which source produced
+// its input, so this swap is invisible to every agent and every screen
+// that reads `seller`.
 function buildSeller(meta) {
   const rawData = getSellerRawData(meta.id, meta);
   const metrics = computeSellerMetrics(rawData);
-  return { ...meta, ...metrics, rawData };
+  return { ...meta, ...metrics, rawData, dataSource: 'local-fallback' };
 }
 
 export function SellerProvider({ children }) {
@@ -80,6 +86,29 @@ export function SellerProvider({ children }) {
   const [orchestratorOutput, setOrchestratorOutput] = useState(null);
   const [coldStartOutput, setColdStartOutput] = useState(null);
   const logIdRef = useRef(0);
+  const activeSellerIdRef = useRef(seller.id);
+
+  // Upgrade from the instant local render to real MongoDB data, for
+  // whichever seller is currently active. Guarded against races: if the
+  // seller gets switched again before this resolves, the stale response
+  // is discarded instead of overwriting the newer seller's data.
+  useEffect(() => {
+    activeSellerIdRef.current = seller.id;
+    const meta = SELLERS[seller.id];
+    if (!meta) return;
+
+    let cancelled = false;
+    getSellerData(seller.id, meta).then(({ source, raw, fallbackReason }) => {
+      if (cancelled || activeSellerIdRef.current !== seller.id) return;
+      const metrics = computeSellerMetrics(raw);
+      setSeller((prev) => (prev.id === seller.id ? { ...prev, ...metrics, rawData: raw, dataSource: source, dataSourceNote: fallbackReason } : prev));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seller.id]);
 
   const switchSeller = useCallback((sellerId) => {
     const meta = SELLERS[sellerId] || SELLERS.established;
