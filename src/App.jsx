@@ -11,6 +11,7 @@ import Credit from './modules/Credit';
 import Credits from './pages/Credits';
 import Login from './pages/Login';
 import MeeshoListing from './pages/MeeshoListing';
+import CreditApply from './pages/CreditApply';
 
 // Redirects to /login if the user is not authenticated.
 function PrivateRoute({ children }) {
@@ -44,6 +45,7 @@ export default function App() {
                       <Route path="/credit" element={<Credit />} />
                       <Route path="/credits" element={<Credits />} />
                       <Route path="/meesho-listing" element={<MeeshoListing />} />
+                      <Route path="/credit/apply" element={<CreditApply />} />
                     </Routes>
                   </AppShell>
                 </PrivateRoute>

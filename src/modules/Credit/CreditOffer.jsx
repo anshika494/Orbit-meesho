@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CircleDollarSign, ShieldCheck } from 'lucide-react';
 
 export default function CreditOffer({ offer, seller, risk }) {
+  const navigate = useNavigate();
   return (
     <div className="credit-offer-card card">
       <div className="credit-offer-header">
@@ -76,7 +78,12 @@ export default function CreditOffer({ offer, seller, risk }) {
       )}
 
       <div className="credit-offer-actions">
-        <button className="btn-primary">APPLY IN 1 TAP →</button>
+        <button
+          className="btn-primary"
+          onClick={() => navigate('/credit/apply', { state: { offer } })}
+        >
+          APPLY IN 1 TAP →
+        </button>
         <button className="btn-secondary">Not now</button>
       </div>
     </div>
