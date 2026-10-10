@@ -1,8 +1,6 @@
-# ORBIT — Agentic Growth for Meesho Sellers
+# ORBIT — Agentic Growth for Sellers
 
 A multi-agent AI system, native to the Meesho Seller App, that fixes the three biggest leaks in the women-seller funnel: activation, retention, and scale.
-
-Built for **ScriptedBy{Her} 2.0** (Meesho / Bharat theme).
 
 ---
 
@@ -147,8 +145,3 @@ This boots up a local server to preview the production-built files at `http://lo
 ## Open Source Credits
 
 See [`OPEN_SOURCE_CREDITS.md`](./OPEN_SOURCE_CREDITS.md) for the full attributions table, or open the **Open Source** link in the app's left sidebar (`/credits` route).
-
----
-
-## Submission
-*Submission track: ScriptedBy{Her} 2.0, Meesho*
